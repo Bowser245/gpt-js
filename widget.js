@@ -1,12 +1,16 @@
 (function() {
     // 1. RÉCUPÉRATION DES PARAMÈTRES CONFIGURÉS PAR LE SITE UTILISATEUR
-    const settings = window.BotSettings || {}; 
+    const settings = window.BotSettings || {};
     
     const API_KEY = settings.API_KEY || ""; 
     const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
 
     const baseUrl = settings.BASE_URL || window.location.origin;
-    const customRules = settings.RULES || "Agis comme un assistant virtuel d'aide.";
+    
+    // MODIFICATION : On ajoute une consigne ultra stricte pour interdire le Markdown à l'IA
+    const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
+                        " ATTENTION : Interdiction absolue d'utiliser du Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds uniquement en texte brut fluide.";
+    
     const jsonFileName = settings.JSON_FILE || "";
 
     let siteContextText = ""; // Mémoire contenant le JSON, les fichiers et le texte du site
@@ -73,7 +77,7 @@
 
         const pageText = document.body.innerText || "";
         const cleanPageText = pageText.replace(/\s+/g, ' ').substring(0, 5000); 
- 
+
         siteContextText = `
         REGLES STRICTES DE COMPORTEMENT :
         TU A INTERDICTION DE REPONDRE EN UTILISANT DU MARKDOWN (MD)
@@ -94,12 +98,11 @@
 
     initBotContext();
 
-    // 3. INJECTION DU STYLE CSS (MIS À JOUR AVEC LE BOUTON TOGGLE)
+    // 3. INJECTION DU STYLE CSS
     const style = document.createElement('style');
     style.innerHTML = `
         :root { --chat-primary: #0084ff; }
         
-        /* Bouton d'ouverture / fermeture flottant */
         #gh-chat-toggle-btn {
             position: fixed; bottom: 20px; right: 20px;
             width: 60px; height: 60px;
@@ -112,7 +115,6 @@
         }
         #gh-chat-toggle-btn:hover { transform: scale(1.05); }
 
-        /* Widget de chat masqué par défaut */
         #gh-chat-widget {
             position: fixed; bottom: 90px; right: 20px;
             width: 350px; height: 500px;
@@ -124,7 +126,7 @@
         
         #gh-chat-header { background: var(--chat-primary); color: white; padding: 15px; font-weight: bold; }
         #gh-chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
-        .gh-msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; }
+        .gh-msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; word-break: break-word; white-space: pre-line; }
         .gh-user { background: var(--chat-primary); color: white; align-self: flex-end; }
         .gh-bot { background: #e4e6eb; color: black; align-self: flex-start; }
         #gh-chat-input-area { display: flex; border-top: 1px solid #eee; padding: 10px; background: white; }
@@ -133,14 +135,12 @@
     `;
     document.head.appendChild(style);
 
-    // 4. INJECTION DE LA STRUCTURE HTML (BOUTON + CHAT)
-    // Création du bouton Toggle
+    // 4. INJECTION DE LA STRUCTURE HTML
     const toggleButton = document.createElement('button');
     toggleButton.id = 'gh-chat-toggle-btn';
-    toggleButton.innerHTML = '💬'; // Icône de bulle par défaut
+    toggleButton.innerHTML = '💬'; 
     document.body.appendChild(toggleButton);
 
-    // Création de la fenêtre de Chat
     const widgetContainer = document.createElement('div');
     widgetContainer.id = 'gh-chat-widget';
     widgetContainer.innerHTML = `
@@ -155,16 +155,27 @@
     `;
     document.body.appendChild(widgetContainer);
 
-    // LOGIQUE DE BASCULE (TOGGLE)
     toggleButton.addEventListener('click', () => {
         if (widgetContainer.style.display === 'none' || widgetContainer.style.display === '') {
             widgetContainer.style.display = 'flex';
-            toggleButton.innerHTML = '❌'; // Devient une croix quand c'est ouvert
+            toggleButton.innerHTML = '❌'; 
         } else {
             widgetContainer.style.display = 'none';
-            toggleButton.innerHTML = '💬'; // Redevient une bulle quand c'est fermé
+            toggleButton.innerHTML = '💬'; 
         }
     });
+
+    // Fonction de secours pour nettoyer le Markdown si l'IA oublie la consigne
+    function cleanMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '$1') // Supprime les ** du gras
+            .replace(/\*(.*?)\*/g, '$1')     // Supprime les * de l'italique
+            .replace(/`(.*?)`/g, '$1')       // Supprime les ` pour le code en ligne
+            .replace(/```[\s\S]*?```/g, function(match) { 
+                return match.replace(/```/g, ''); // Nettoie les gros blocs de code
+            })
+            .replace(/^#+\s+/gm, '');        // Supprime les # des titres
+    }
 
     // 5. LOGIQUE DE L'IA (GEMINI)
     const messagesContainer = document.getElementById('gh-chat-messages');
@@ -175,7 +186,14 @@
     function appendMessage(text, sender) {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('gh-msg', `gh-${sender}`);
-        msgDiv.innerText = text;
+        
+        // MODIFICATION : Si c'est le bot, on force le nettoyage du Markdown résiduel
+        if (sender === 'bot') {
+            msgDiv.innerText = cleanMarkdown(text);
+        } else {
+            msgDiv.innerText = text;
+        }
+        
         messagesContainer.appendChild(msgDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }

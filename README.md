@@ -32,7 +32,8 @@ Ajoute ce bloc de code sur n'importe quel site internet, juste avant la fermetur
     JSON_FILE: "data.json" // Optionnel : nom du fichier de configuration à la racine de ton site
   };
 </script>
-<script src="[https://ton-pseudo.github.io/mon-chatbot/widget.js](https://ton-pseudo.github.io/mon-chatbot/widget.js)"></script>```
+<script src="[https://ton-pseudo.github.io/mon-chatbot/widget.js](https://ton-pseudo.github.io/mon-chatbot/widget.js)"></script>
+```
 ### 🛠️ Comment formuler et structurer le fichier JSON ?
 
 Le fichier JSON (par exemple `data.json`) est entièrement libre, mais il doit suivre une structure valide. L'IA est capable de lire n'importe quelle clé ou texte que tu ajoutes dedans. 
@@ -49,4 +50,5 @@ Voici un modèle parfait pour structurer ton fichier :
     "https://ton-pseudo.github.io/mon-autre-depot/index.html",
     "https://ton-pseudo.github.io/un-autre-site/instructions.txt"
   ]
-}```
+}
+```

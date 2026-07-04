@@ -1,6 +1,6 @@
 (function() {
     // 1. RÉCUPÉRATION DES PARAMÈTRES CONFIGURÉS PAR LE SITE UTILISATEUR
-    const settings = window.BotSettings || {};
+    const settings = window.BotSettings || {}; 
     
     const API_KEY = settings.API_KEY || ""; 
     const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;

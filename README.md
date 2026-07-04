@@ -26,10 +26,27 @@ Ajoute ce bloc de code sur n'importe quel site internet, juste avant la fermetur
 ```html
 <script>
   window.BotSettings = {
-    API_KEY: "TA_CLE_API_GEMINI", // Obtenue gratuitement sur [https://aistudio.google.com/](https://aistudio.google.com/)
-    BASE_URL: "[[https://ton-site-actuel.com](https://github.com/Bowser245/gpt-js/widget.js)](https://github.com/Bowser245/gpt-js/widget.js)",
+    API_KEY: "TA_CLE_API_GEMINI", // Obtenue gratuitement sur https://aistudio.google.com/api-key
+    BASE_URL: "https://github.com/Bowser245/gpt-js/widget.js",
     RULES: "Tu es l'IA officielle de ce site. Réponds poliment et de manière concise en français.", // Change si tu veut
     JSON_FILE: "data.json" // Optionnel : nom du fichier de configuration à la racine de ton site
   };
 </script>
 <script src="[https://ton-pseudo.github.io/mon-chatbot/widget.js](https://ton-pseudo.github.io/mon-chatbot/widget.js)"></script>```
+### 🛠️ Comment formuler et structurer le fichier JSON ?
+
+Le fichier JSON (par exemple `data.json`) est entièrement libre, mais il doit suivre une structure valide. L'IA est capable de lire n'importe quelle clé ou texte que tu ajoutes dedans. 
+
+Pour que le script fonctionne correctement avec tes bases de connaissances, tu dois respecter une seule règle : utiliser la clé `"knowledge_files"` sous forme de tableau (liste) pour tes liens.
+
+Voici un modèle parfait pour structurer ton fichier :
+
+```json
+{
+  "nom_du_site": "Mon Projet Tech",
+  "knowledge_files": [
+    "https://ton-pseudo.github.io/mon-autre-depot/main.py",
+    "https://ton-pseudo.github.io/mon-autre-depot/index.html",
+    "https://ton-pseudo.github.io/un-autre-site/instructions.txt"
+  ]
+}```

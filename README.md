@@ -9,7 +9,7 @@ Ce script permet d'intégrer instantanément un assistant virtuel intelligent su
 ## ✨ Fonctionnalités
 
 * **⚡ 100% Sans Serveur (Serverless) :** Le script s'exécute directement dans le navigateur du visiteur. Aucun serveur à maintenir, aucun risque de suppression.
-* **♾️ Zéro Limite :** Propulsé par l'API gratuite de Google Gemini (modèle `gemini-1.5-flash`), capable d'encaisser des milliers de requêtes quotidiennes.
+* **♾️ Zéro Limite :** Propulsé par l'API gratuite de Google Gemini (modèle `gemini-3.5-flash`), capable d'encaisser des milliers de requêtes quotidiennes.
 * **🧠 RAG Dynamique (Base de connaissances) :** * Lit automatiquement le texte de la page où se trouve l'utilisateur.
     * Analyse un fichier JSON de configuration locale.
     * Télécharge et assimile le code ou le texte de fichiers distants (`.py`, `.html`...) même s'ils sont sur un autre GitHub Pages grâce à un bypass CORS automatique (via jsDelivr).

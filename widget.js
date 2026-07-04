@@ -50,7 +50,7 @@
                 const response = await fetch(jsonUrl);
                 if (response.ok) {
                     const data = await response.json();
-                    jsonContent = JSON.stringify(data, null, 2);
+                    jsonContent = JSON.stringify(data);
 
                     if (data.knowledge_files && Array.isArray(data.knowledge_files)) {
                         for (let fileUrl of data.knowledge_files) {
@@ -60,7 +60,7 @@
                                 if (fileResponse.ok) {
                                     const fileText = await fileResponse.text();
                                     const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-                                    extraFilesContent += `\n--- CONTENU DU FICHIER SOURCE [${fileName}] ---\n${fileText}\n`;
+                                    extraFilesContent += `\n--- SOURCE [${fileName}] ---\n${fileText}\n`;
                                 }
                             } catch (err) {
                                 console.log("Impossible de charger le fichier de connaissance : " + fileUrl, err);
@@ -73,25 +73,11 @@
             }
         }
 
+        // On nettoie agressivement le texte de la page pour eviter les caracteres speciaux de controle
         const pageText = document.body.innerText || "";
-        const cleanPageText = pageText.replace(/\s+/g, ' ').substring(0, 5000); 
+        const cleanPageText = pageText.replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').substring(0, 2000); 
 
-        siteContextText = `
-        REGLES STRICTES DE COMPORTEMENT :
-        TU A INTERDICTION DE REPONDRE EN UTILISANT DU MARKDOWN (MD)
-        ${customRules}
-
-        DONNEES DU FICHIER JSON DU SITE :
-        ${jsonContent ? jsonContent : "Aucune donnee JSON fournie."}
-
-        BASES DE CONNAISSANCES SUPPLEMENTAIRES (FICHIERS SOURCES) :
-        ${extraFilesContent ? extraFilesContent : "Aucun fichier source supplementaire connecte."}
-
-        CONTENU DE LA PAGE ACTUELLE OU SE TROUVE L'UTILISATEUR :
-        ${cleanPageText}
-        
-        Consigne : Utilise l'ensemble des informations ci-dessus pour répondre précisément aux questions de l'utilisateur. Si l'information n'est pas dedans, réponds de ton mieux ou invite-les à contacter le support du site.
-        `;
+        siteContextText = `CONTEXTE DE BASE :\n${customRules}\n\nINFOS CONFIG :\n${jsonContent}\n\nSOURCES COMPLEMENTAIRES:\n${extraFilesContent}\n\nTEXTE DE LA PAGE:\n${cleanPageText}`;
     }
 
     initBotContext();
@@ -163,15 +149,14 @@
         }
     });
 
-    // CORRECTION DE LA FONCTION : Remplacement complet et propre du Markdown
     function cleanMarkdown(text) {
         if (!text) return "";
         return text
-            .replace(/```/g, '')              // Enleve les balises de blocs de code
-            .replace(/\*\*/g, '')             // Enleve le gras
-            .replace(/\*/g, '')               // Enleve l'italique ou puces standards
-            .replace(/`/g, '')                // Enleve le code en ligne
-            .replace(/^#+\s+/gm, '');         // Enleve les titres de type #, ##
+            .replace(/```/g, '')
+            .replace(/\*\*/g, '')
+            .replace(/\*/g, '')
+            .replace(/`/g, '')
+            .replace(/^#+\s+/gm, '');
     }
 
     // 5. LOGIQUE DE L'IA (GEMINI)
@@ -201,34 +186,51 @@
         appendMessage(text, 'user');
         chatInput.value = '';
 
-        if (conversationHistory.length === 0) {
-            conversationHistory.push({ 
-                role: "user", 
-                parts: [{ text: siteContextText + `\n\nVoici ma premiere question : ${text}` }] 
-            });
-        } else {
-            conversationHistory.push({ role: "user", parts: [{ text: text }] });
-        }
+        // CORRECTION DE L'HISTORIQUE : On structure selon les exigences strictes de Gemini
+        conversationHistory.push({ 
+            role: "user", 
+            parts: [{ text: text }] 
+        });
 
-        // Nettoyage de caracteres speciaux pour le debug / chargement
         appendMessage("En train de reflechir...", 'bot');
         const loadingMsg = messagesContainer.lastChild;
 
         try {
+            // CORRECTION DE LA REQUÊTE : Utilisation de systemInstruction pour envoyer les règles du site de manière isolée et propre
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: conversationHistory })
+                body: JSON.stringify({ 
+                    contents: conversationHistory,
+                    systemInstruction: {
+                        parts: [{ text: siteContextText }]
+                    }
+                })
             });
 
             const data = await response.json();
+            
+            // Si Google renvoie une erreur interne (ex: quota, contenu bloque...)
+            if (data.error) {
+                console.error("Erreur API Gemini:", data.error.message);
+                loadingMsg.remove();
+                appendMessage("Erreur de l'assistant: " + data.error.message, 'bot');
+                return;
+            }
+
             const botResponse = data.candidates[0].content.parts[0].text;
 
             loadingMsg.remove();
             appendMessage(botResponse, 'bot');
-            conversationHistory.push({ role: "model", parts: [{ text: botResponse }] });
+            
+            // On enregistre la réponse du bot avec le rôle "model" exigé par l'API
+            conversationHistory.push({ 
+                role: "model", 
+                parts: [{ text: botResponse }] 
+            });
 
         } catch (error) {
+            console.error("Erreur Fetch:", error);
             loadingMsg.remove();
             appendMessage("Desole, une erreur est survenue lors de la recuperation des donnees.", 'bot');
         }

@@ -76,6 +76,7 @@
 
         siteContextText = `
         REGLES STRICTES DE COMPORTEMENT :
+        TU A INTERDICTION DE REPONDRE EN UTILISANT DU MARKDOWN (MD)
         ${customRules}
 
         DONNEES DU FICHIER JSON DU SITE :

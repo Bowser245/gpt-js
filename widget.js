@@ -73,7 +73,7 @@
 
         const pageText = document.body.innerText || "";
         const cleanPageText = pageText.replace(/\s+/g, ' ').substring(0, 5000); 
-
+ 
         siteContextText = `
         REGLES STRICTES DE COMPORTEMENT :
         TU A INTERDICTION DE REPONDRE EN UTILISANT DU MARKDOWN (MD)

@@ -7,15 +7,13 @@
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     
-    // MODIFICATION : On ajoute une consigne ultra stricte pour interdire le Markdown à l'IA
     const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
                         " ATTENTION : Interdiction absolue d'utiliser du Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds uniquement en texte brut fluide.";
     
     const jsonFileName = settings.JSON_FILE || "";
 
-    let siteContextText = ""; // Mémoire contenant le JSON, les fichiers et le texte du site
+    let siteContextText = ""; 
 
-    // Fonction pour transformer un lien GitHub ou GitHub Pages en lien brut compatible CORS via jsDelivr
     function convertToCorsFriendlyUrl(url) {
         try {
             if (url.includes(".github.io/")) {
@@ -36,7 +34,7 @@
         return url; 
     }
 
-    // 2. CHARGEMENT DES DONNÉES DU SITE (JSON + FICHIERS DE CONNAISSANCE + TEXTE)
+    // 2. CHARGEMENT DES DONNÉES DU SITE
     async function initBotContext() {
         if (API_KEY === "") {
             console.error("La cle api doit etre fournie");
@@ -165,16 +163,15 @@
         }
     });
 
-    // Fonction de secours pour nettoyer le Markdown si l'IA oublie la consigne
+    // CORRECTION DE LA FONCTION : Remplacement complet et propre du Markdown
     function cleanMarkdown(text) {
+        if (!text) return "";
         return text
-            .replace(/\*\*(.*?)\*\*/g, '$1') // Supprime les ** du gras
-            .replace(/\*(.*?)\*/g, '$1')     // Supprime les * de l'italique
-            .replace(/`(.*?)`/g, '$1')       // Supprime les ` pour le code en ligne
-            .replace(/```[\s\S]*?```/g, function(match) { 
-                return match.replace(/```/g, ''); // Nettoie les gros blocs de code
-            })
-            .replace(/^#+\s+/gm, '');        // Supprime les # des titres
+            .replace(/```/g, '')              // Enleve les balises de blocs de code
+            .replace(/\*\*/g, '')             // Enleve le gras
+            .replace(/\*/g, '')               // Enleve l'italique ou puces standards
+            .replace(/`/g, '')                // Enleve le code en ligne
+            .replace(/^#+\s+/gm, '');         // Enleve les titres de type #, ##
     }
 
     // 5. LOGIQUE DE L'IA (GEMINI)
@@ -187,7 +184,6 @@
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('gh-msg', `gh-${sender}`);
         
-        // MODIFICATION : Si c'est le bot, on force le nettoyage du Markdown résiduel
         if (sender === 'bot') {
             msgDiv.innerText = cleanMarkdown(text);
         } else {
@@ -214,6 +210,7 @@
             conversationHistory.push({ role: "user", parts: [{ text: text }] });
         }
 
+        // Nettoyage de caracteres speciaux pour le debug / chargement
         appendMessage("En train de reflechir...", 'bot');
         const loadingMsg = messagesContainer.lastChild;
 

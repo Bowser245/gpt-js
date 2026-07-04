@@ -2,6 +2,16 @@
     // 1. RÉCUPÉRATION DES PARAMÈTRES CONFIGURÉS PAR LE SITE UTILISATEUR
     const settings = window.BotSettings || {};
     
+    // Vérification du paramètre OBLIGATOIRE MODE
+    const MODE = settings.MODE; 
+    if (MODE !== "widget" && MODE !== "page") {
+        console.error("Le parametre MODE est obligatoire et doit valoir 'widget' ou 'page'.");
+        return; // On stoppe tout
+    }
+
+    // Gestion du nom de l'IA OPTIONNEL
+    const aiName = settings.AI_NAME || "Assistant IA Dynamique";
+
     const API_KEY = settings.API_KEY || ""; 
     const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
 
@@ -60,7 +70,6 @@
                                 if (fileResponse.ok) {
                                     const fileText = await fileResponse.text();
                                     const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-                                    // Nettoyage agressif du texte des fichiers sources
                                     const cleanFileText = fileText.replace(/["'\\]/g, ' ').replace(/[\r\n\t]/g, ' ');
                                     extraFilesContent += ` Source [${fileName}] : ${cleanFileText}. `;
                                 }
@@ -75,7 +84,6 @@
             }
         }
 
-        // Nettoyage total du texte pour qu'il soit 100% compatible JSON safe
         const pageText = document.body.innerText || "";
         const cleanPageText = pageText.replace(/["'\\]/g, ' ').replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').substring(0, 1500); 
 
@@ -84,32 +92,11 @@
 
     initBotContext();
 
-    // 3. INJECTION DU STYLE CSS
+    // 3. INJECTION DU STYLE CSS (Selon MODE)
     const style = document.createElement('style');
-    style.innerHTML = `
+    
+    let cssStyles = `
         :root { --chat-primary: #0084ff; }
-        
-        #gh-chat-toggle-btn {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 60px; height: 60px;
-            background: var(--chat-primary); color: white;
-            border-radius: 50%; border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer; z-index: 999999;
-            font-size: 24px; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.3s ease;
-        }
-        #gh-chat-toggle-btn:hover { transform: scale(1.05); }
-
-        #gh-chat-widget {
-            position: fixed; bottom: 90px; right: 20px;
-            width: 350px; height: 500px;
-            background: white; border-radius: 12px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-            display: none; flex-direction: column; overflow: hidden;
-            font-family: Arial, sans-serif; z-index: 999998;
-        }
-        
         #gh-chat-header { background: var(--chat-primary); color: white; padding: 15px; font-weight: bold; }
         #gh-chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
         .gh-msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; word-break: break-word; white-space: pre-line; }
@@ -119,37 +106,82 @@
         #gh-chat-input { flex: 1; border: none; padding: 10px; outline: none; font-size: 14px; }
         #gh-send-btn { background: var(--chat-primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     `;
+
+    if (MODE === "widget") {
+        cssStyles += `
+            #gh-chat-toggle-btn {
+                position: fixed; bottom: 20px; right: 20px;
+                width: 60px; height: 60px;
+                background: var(--chat-primary); color: white;
+                border-radius: 50%; border: none;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                cursor: pointer; z-index: 999999;
+                font-size: 24px; display: flex; align-items: center; justify-content: center;
+                transition: transform 0.3s ease;
+            }
+            #gh-chat-toggle-btn:hover { transform: scale(1.05); }
+
+            #gh-chat-widget {
+                position: fixed; bottom: 90px; right: 20px;
+                width: 350px; height: 500px;
+                background: white; border-radius: 12px;
+                box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+                display: none; flex-direction: column; overflow: hidden;
+                font-family: Arial, sans-serif; z-index: 999998;
+            }
+        `;
+    } else if (MODE === "page") {
+        cssStyles += `
+            #gh-chat-widget {
+                width: 100%; height: 100vh;
+                max-width: 100%;
+                background: white;
+                display: flex; flex-direction: column; overflow: hidden;
+                font-family: Arial, sans-serif;
+            }
+        `;
+    }
+
+    style.innerHTML = cssStyles;
     document.head.appendChild(style);
 
     // 4. INJECTION DE LA STRUCTURE HTML
-    const toggleButton = document.createElement('button');
-    toggleButton.id = 'gh-chat-toggle-btn';
-    toggleButton.innerHTML = '💬'; 
-    document.body.appendChild(toggleButton);
+    if (MODE === "widget") {
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'gh-chat-toggle-btn';
+        toggleButton.innerHTML = '💬'; 
+        document.body.appendChild(toggleButton);
+    }
 
     const widgetContainer = document.createElement('div');
     widgetContainer.id = 'gh-chat-widget';
     widgetContainer.innerHTML = `
-        <div id="gh-chat-header">Assistant IA Dynamique</div>
+        <div id="gh-chat-header">${aiName}</div>
         <div id="gh-chat-messages">
-            <div class="gh-msg gh-bot">Bonjour ! Je connais le contenu de ce site, ses fichiers de configuration et ses bases de connaissances. Comment puis-je t'aider ?</div>
+            <div class="gh-msg gh-bot">Bonjour ! Je suis ${aiName}. Comment puis-je t'aider aujourd'hui ?</div>
         </div>
         <div id="gh-chat-input-area">
             <input type="text" id="gh-chat-input" placeholder="Écris ton message ici...">
             <button id="gh-send-btn">Envoyer</button>
         </div>
     `;
-    document.body.appendChild(widgetContainer);
+    
+    // Si mode page, on peut l'injecter dans un conteneur dédié ou directement dans le body
+    const targetElement = document.getElementById('gh-chat-page-container') || document.body;
+    targetElement.appendChild(widgetContainer);
 
-    toggleButton.addEventListener('click', () => {
-        if (widgetContainer.style.display === 'none' || widgetContainer.style.display === '') {
-            widgetContainer.style.display = 'flex';
-            toggleButton.innerHTML = '❌'; 
-        } else {
-            widgetContainer.style.display = 'none';
-            toggleButton.innerHTML = '💬'; 
-        }
-    });
+    if (MODE === "widget") {
+        const toggleButton = document.getElementById('gh-chat-toggle-btn');
+        toggleButton.addEventListener('click', () => {
+            if (widgetContainer.style.display === 'none' || widgetContainer.style.display === '') {
+                widgetContainer.style.display = 'flex';
+                toggleButton.innerHTML = '❌'; 
+            } else {
+                widgetContainer.style.display = 'none';
+                toggleButton.innerHTML = '💬'; 
+            }
+        });
+    }
 
     function cleanMarkdown(text) {
         if (!text) return "";
@@ -188,7 +220,6 @@
         appendMessage(text, 'user');
         chatInput.value = '';
 
-        // CORRECTION DU FORMAT : On repasse par une injection propre dans le premier message utilisateur
         if (conversationHistory.length === 0) {
             conversationHistory.push({ 
                 role: "user", 

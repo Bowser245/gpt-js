@@ -27,12 +27,12 @@ Ajoute ce bloc de code sur n'importe quel site internet, juste avant la fermetur
 <script>
   window.BotSettings = {
     API_KEY: "TA_CLE_API_GEMINI", // Obtenue gratuitement sur https://aistudio.google.com/api-key
-    BASE_URL: "https://github.com/Bowser245/gpt-js/widget.js",
+    BASE_URL: "https://nom-de-ton-site/web/racine",
     RULES: "Tu es l'IA officielle de ce site. Réponds poliment et de manière concise en français.", // Change si tu veut
     JSON_FILE: "data.json" // Optionnel : nom du fichier de configuration à la racine de ton site
   };
 </script>
-<script src="[https://ton-pseudo.github.io/mon-chatbot/widget.js](https://ton-pseudo.github.io/mon-chatbot/widget.js)"></script>
+<script src="https://github.com/Bowser245/gpt-js/widget.js"></script>
 ```
 ### 🛠️ Comment formuler et structurer le fichier JSON ?
 

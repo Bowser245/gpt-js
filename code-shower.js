@@ -10,11 +10,9 @@ window.CodeState = {
 
     // Fonction principale qui cherche les conteneurs et charge le code
     init: function() {
-        // On cherche tous les éléments qui ont un attribut 'data-code-src'
         const codeContainers = document.querySelectorAll('[data-code-src]');
 
         codeContainers.forEach((container) => {
-            // On récupère la clé de configuration (ex: "code1")
             const configKey = container.getAttribute('data-code-src');
             const fileConfig = this.config[configKey];
 
@@ -24,17 +22,14 @@ window.CodeState = {
             }
 
             const filename = fileConfig.filename;
-            // On extrait l'extension du fichier (ex: "sh", "py", "js") pour l'afficher en titre
             const extension = filename.split('.').pop().toUpperCase();
 
-            // On charge dynamiquement le contenu du fichier
             fetch(filename)
                 .then(response => {
                     if (!response.ok) throw new Error(`Impossible de charger ${filename}`);
                     return response.text();
                 })
                 .then(codeContent => {
-                    // On génère le HTML propre à ce bloc de code
                     this.renderBlock(container, extension, codeContent, fileConfig.description);
                 })
                 .catch(error => {
@@ -43,12 +38,28 @@ window.CodeState = {
         });
     },
 
-    // Génération du HTML et injection des styles
+    // Génération du HTML avec numérotation des lignes et styles injectés
     renderBlock: function(container, extension, content, description) {
         container.style.cssText = "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f8f9fa; border-radius: 8px;";
         
-        // Sécurisation du contenu pour éviter les injections HTML (< devient &lt;)
-        const safeContent = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        // Découpage du code par ligne pour générer les numéros
+        const lines = content.split('\n');
+        
+        // Génération de la colonne des numéros de ligne
+        let lineNumbersHTML = '';
+        // Génération de la colonne du code sécurisé
+        let codeLinesHTML = '';
+
+        lines.forEach((line, index) => {
+            // Évite d'afficher une ligne numérotée vide tout à la fin si le fichier finit par un saut de ligne
+            if (index === lines.length - 1 && line.trim() === '') return;
+
+            lineNumbersHTML += `<div style="color: #5c6370; text-align: right; padding-right: 12px; user-select: none;">${index + 1}</div>`;
+            
+            const safeLine = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            // On conserve les lignes vides visuellement avec un espace insécable si nécessaire
+            codeLinesHTML += `<div style="white-space: pre;">${safeLine || ' '}</div>`;
+        });
 
         container.innerHTML = `
             ${description ? `<p style="margin-bottom: 10px; font-weight: 500;">${description}</p>` : ''}
@@ -60,11 +71,19 @@ window.CodeState = {
                         <span>Copier</span>
                     </button>
                 </div>
-                <pre style="margin: 0; padding: 16px; overflow-x: auto;"><code style="font-family: 'Fira Code', Consolas, Monaco, monospace; color: #dcdcdc; font-size: 0.95rem;">${safeContent}</code></pre>
+                
+                <div style="display: grid; grid-template-columns: auto 1fr; padding: 16px; overflow-x: auto; font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 0.95rem; background-color: #1e1e1e;">
+                    <div style="border-right: 1px solid #3e4451; margin-right: 12px; font-variant-numeric: tabular-nums;">
+                        ${lineNumbersHTML}
+                    </div>
+                    <div class="code-content-area" style="color: #dcdcdc;">
+                        ${codeLinesHTML}
+                    </div>
+                </div>
             </div>
         `;
 
-        // Ajout de l'écouteur d'événement sur le bouton copier fraîchement créé
+        // Événement Copier
         const button = container.querySelector('.copy-button');
         button.addEventListener('click', function() {
             navigator.clipboard.writeText(content).then(() => {

@@ -87,14 +87,8 @@ Et a la fin de votre fichier il doit y avoir ceci :
 <script>
         // On configure les fichiers cibles et leurs descriptions
         window.CodeState.setup({
-            [LE NOM QUE TU VEUT]: {
-                filename: "Fichier.extension",
-                description: "Code :"
-            },
-            [LE NOM QUE TU VEUT]: {
-                filename: "Fichier.extension",
-                description: "Code :"
-            }
+           code1: { filename: "setupper.sh" },
+           code2: { filename: "startup.py" }
         });
 
         // On lance le chargement automatique

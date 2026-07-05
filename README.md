@@ -54,3 +54,50 @@ Voici un modèle parfait pour structurer ton fichier :
   ]
 }
 ```
+---
+
+# Code shower 
+
+Un petit script JS qui permet d'afficher du code de maniere fluide
+
+---
+
+## ✨ Fonctionnalités
+
+* **⚡ 100% Sans Serveur (Serverless) :** Le script s'exécute directement dans le navigateur du visiteur. Aucun serveur à maintenir, aucun risque de suppression.
+* **♾️ Zéro Limite :** Avec ce script rien a faire.
+* **🎨 Intégration Universelle :** S'active sur n'importe quel site (HTML, WordPress, Webflow...) via une simple balise `<script>`.
+
+---
+
+## Intégration web
+
+
+Un élément de code doit être formulé comme ceci :
+
+```
+<div data-code-src="[LE NOM QUE TU VEUT]"></div>
+```
+
+Et a la fin de votre fichier il doit y avoir ceci :
+
+```
+<script src="https://bowser245.github.io/gpt-js/code-shower.js"></script>
+
+<script>
+        // On configure les fichiers cibles et leurs descriptions
+        window.CodeState.setup({
+            [LE NOM QUE TU VEUT]: {
+                filename: "Fichier.extension",
+                description: "Code :"
+            },
+            [LE NOM QUE TU VEUT]: {
+                filename: "Fichier.extension",
+                description: "Code :"
+            }
+        });
+
+        // On lance le chargement automatique
+        window.CodeState.init();
+</script>
+```

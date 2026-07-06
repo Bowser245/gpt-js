@@ -11,14 +11,14 @@
     const aiName = settings.AI_NAME || "Assistant IA Dynamique";
     const API_KEY = settings.API_KEY || ""; 
     // Utilisation de v1beta pour assurer le support natif du Function Calling (tools) via requêtes REST brutes
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     
     const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
                         " Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu devez afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>." +
                         " Tu as accès à deux outils puissants : 'analyser_page' pour voir l'arborescence HTML de la page actuelle (historique, boutons, textes), et 'executer_javascript' pour exécuter du code sur la page (par exemple pour scroller, mettre en valeur, clignoter ou modifier graphiquement un élément si l'utilisateur ne le trouve pas). Utilise-les dès que nécessaire. Attention ces 2 outils utilise le débit API donc utilises les que si c'est vraiment néssésaire." + 
-                        " Si tu écécute executer_javascript tu a le droit de rediriger l'utilisateur seulement dans les pages du site exemple la racine doit être " + baseUrl + " si rien est fournie avant tu a INTERDICTION de rediriger l'utilisateur ces utilisations du executer_javascript sont interdites : " + 
+                        " Si tu écécute executer_javascript tu a le droit de rediriger l'utilisateur seulement dans les pages du site exemple la racine doit être '" + baseUrl + "' si rien est fournie avant tu a INTERDICTION de rediriger l'utilisateur ces utilisations du executer_javascript sont interdites : " + 
                         " Executer des fonctions uniquement appelées via élément HTML, Télécharger des choses." + 
                         " Si via executer_javascript tu veux modifier le presse-papier de l'utilisateur, tu as le droit de générer un code qui utilise navigator.clipboard.writeText('TEXTE'). Une sécurité demandera une confirmation à l'utilisateur avant l'exécution.";
     

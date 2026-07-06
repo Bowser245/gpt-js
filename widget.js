@@ -1,7 +1,7 @@
 (function() {
     // 1. RÉCUPÉRATION DES PARAMÈTRES CONFIGURÉS PAR LE SITE UTILISATEUR
     const settings = window.BotSettings || {};
-    
+     
     const MODE = settings.MODE; 
     if (MODE !== "widget" && MODE !== "page") {
         console.error("Le parametre MODE est obligatoire et doit valoir 'widget' ou 'page'.");

@@ -7,7 +7,7 @@
         console.error("Le parametre MODE est obligatoire et doit valoir 'widget' ou 'page'.");
         return;
     }
-
+ 
     const aiName = settings.AI_NAME || "Assistant IA Dynamique";
     const API_KEY = settings.API_KEY || ""; 
     // Utilisation de v1beta pour assurer le support natif du Function Calling (tools) via requêtes REST brutes

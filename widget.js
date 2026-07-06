@@ -1,7 +1,7 @@
 (function() {
     // 1. RÉCUPÉRATION DES PARAMÈTRES CONFIGURÉS PAR LE SITE UTILISATEUR
     const settings = window.BotSettings || {};
-     
+    
     const MODE = settings.MODE; 
     if (MODE !== "widget" && MODE !== "page") {
         console.error("Le parametre MODE est obligatoire et doit valoir 'widget' ou 'page'.");
@@ -10,12 +10,13 @@
 
     const aiName = settings.AI_NAME || "Assistant IA Dynamique";
     const API_KEY = settings.API_KEY || ""; 
+    // Utilisation de v1beta pour assurer le support natif du Function Calling (tools) via requêtes REST brutes
     const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     
     const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
-                        " Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu dois afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>." +
+                        " Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu devez afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>." +
                         " Tu as accès à deux outils puissants : 'analyser_page' pour voir l'arborescence HTML de la page actuelle (historique, boutons, textes), et 'executer_javascript' pour exécuter du code sur la page (par exemple pour scroller, mettre en valeur, clignoter ou modifier graphiquement un élément si l'utilisateur ne le trouve pas). Utilise-les dès que nécessaire. Attention ces 2 outils utilise le débit API donc utilises les que si c'est vraiment néssésaire." + 
                         " Si tu écécute executer_javascript tu a le droit de rediriger l'utilisateur seulement dans les pages du site exemple la racine doit être " + baseUrl + " si rien est fournie avant tu a INTERDICTION de rediriger l'utilisateur ces utilisations du executer_javascript sont interdites : " + 
                         " Executer des fonctions uniquement appelées via élément HTML, Télécharger des choses." + 
@@ -167,7 +168,7 @@
 
     function cleanMarkdown(text) {
         if (!text) return "";
-        return text.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').replace(/^#+\s+/gm, '');
+        return text.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').replace(/^#+\s+/gm, '');
     }
 
     function gererLectureTexte(texteAEnregistrer, bouton) {
@@ -245,18 +246,16 @@
                         e.stopPropagation();
                         if (execBtn.classList.contains('disabled')) return;
                         
-                        // ANALYSE DU CODE : Vérification de la modification du presse-papier
+                        // ANALYSE DU CODE : Sécurité modification du presse-papier
                         if (jsCodeToAuthorize.includes("clipboard.writeText")) {
-                            // On extrait la chaîne de texte à copier pour l'afficher à l'utilisateur
                             let match = jsCodeToAuthorize.match(/writeText\s*\(\s*['"`](.*?)['"`]\s*\)/);
                             let texteExtrait = match ? match[1] : "[Texte inconnu]";
                             
-                            // Demande de validation explicite à l'utilisateur
                             let confirmation = confirm(`${aiName} demande a remplacer votre presse-papier par ${texteExtrait}`);
                             if (!confirmation) {
                                 execBtn.innerHTML = '❌ Modification refusée par l\'utilisateur';
                                 execBtn.classList.add('disabled');
-                                return; // On stoppe tout
+                                return;
                             }
                         }
 
@@ -324,6 +323,11 @@
             
             if (data.error) {
                 appendMessage("Erreur de l'assistant: " + data.error.message, 'bot');
+                return;
+            }
+
+            if (!data.candidates || data.candidates.length === 0) {
+                appendMessage("L'assistant n'a pas pu générer de réponse.", 'bot');
                 return;
             }
 

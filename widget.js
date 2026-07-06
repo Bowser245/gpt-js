@@ -11,7 +11,7 @@
     const aiName = settings.AI_NAME || "Assistant IA Dynamique";
     const API_KEY = settings.API_KEY || ""; 
     // Utilisation de v1beta pour assurer le support natif du Function Calling (tools) via requêtes REST brutes
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     

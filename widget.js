@@ -17,8 +17,9 @@
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     
+    // MODIFICATION 1 : On autorise explicitement les balises HTML <a> pour les liens
     const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
-                        " ATTENTION : Interdiction absolue d'utiliser du Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds uniquement en texte brut fluide.";
+                        " ATTENTION : Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu dois afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>";
     
     const jsonFileName = settings.JSON_FILE || "";
 
@@ -102,6 +103,8 @@
         .gh-msg { max-width: 80%; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; word-break: break-word; white-space: pre-line; }
         .gh-user { background: var(--chat-primary); color: white; align-self: flex-end; }
         .gh-bot { background: #e4e6eb; color: black; align-self: flex-start; }
+        /* Style pour s'assurer que les liens générés s'affichent correctement */
+        .gh-bot a { color: #0084ff; text-decoration: underline; font-weight: bold; }
         #gh-chat-input-area { display: flex; border-top: 1px solid #eee; padding: 10px; background: white; }
         #gh-chat-input { flex: 1; border: none; padding: 10px; outline: none; font-size: 14px; }
         #gh-send-btn { background: var(--chat-primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -166,7 +169,6 @@
         </div>
     `;
     
-    // Si mode page, on peut l'injecter dans un conteneur dédié ou directement dans le body
     const targetElement = document.getElementById('gh-chat-page-container') || document.body;
     targetElement.appendChild(widgetContainer);
 
@@ -183,6 +185,7 @@
         });
     }
 
+    // MODIFICATION 3 : On nettoie le markdown mais on préserve le HTML
     function cleanMarkdown(text) {
         if (!text) return "";
         return text
@@ -204,7 +207,8 @@
         msgDiv.classList.add('gh-msg', `gh-${sender}`);
         
         if (sender === 'bot') {
-            msgDiv.innerText = cleanMarkdown(text);
+            // MODIFICATION 2 : Utilisation de innerHTML au lieu de innerText pour interpréter les balises <a>
+            msgDiv.innerHTML = cleanMarkdown(text);
         } else {
             msgDiv.innerText = text;
         }
@@ -232,7 +236,7 @@
             });
         }
 
-        appendMessage("En train de reflechir...", 'bot');
+        appendMessage("En train de réfléchir...", 'bot');
         const loadingMsg = messagesContainer.lastChild;
 
         try {
@@ -266,7 +270,7 @@
         } catch (error) {
             console.error("Erreur Fetch:", error);
             loadingMsg.remove();
-            appendMessage("Desole, une erreur est survenue lors de la recuperation des donnees.", 'bot');
+            appendMessage("Désolé, une erreur est survenue lors de la récupération des données.", 'bot');
         }
     }
 

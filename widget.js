@@ -7,20 +7,18 @@
         console.error("Le parametre MODE est obligatoire et doit valoir 'widget' ou 'page'.");
         return;
     }
- 
+
     const aiName = settings.AI_NAME || "Assistant IA Dynamique";
     const API_KEY = settings.API_KEY || ""; 
-    // Utilisation de v1beta pour assurer le support natif du Function Calling (tools) via requêtes REST brutes
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash-latest:generateContent?key=${API_KEY}`;
+    
+    // URL stable sur la v1beta utilisant le modèle recommandé
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
 
     const baseUrl = settings.BASE_URL || window.location.origin;
     
+    // Nettoyage des consignes pour supprimer les mentions des outils retirés
     const customRules = (settings.RULES || "Agis comme un assistant virtuel d'aide.") + 
-                        " Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu devez afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>." +
-                        " Tu as accès à deux outils puissants : 'analyser_page' pour voir l'arborescence HTML de la page actuelle (historique, boutons, textes), et 'executer_javascript' pour exécuter du code sur la page (par exemple pour scroller, mettre en valeur, clignoter ou modifier graphiquement un élément si l'utilisateur ne le trouve pas). Utilise-les dès que nécessaire. Attention ces 2 outils utilise le débit API donc utilises les que si c'est vraiment néssésaire." + 
-                        " Si tu écécute executer_javascript tu a le droit de rediriger l'utilisateur seulement dans les pages du site exemple la racine doit être '" + baseUrl + "' si rien est fournie avant tu a INTERDICTION de rediriger l'utilisateur ces utilisations du executer_javascript sont interdites : " + 
-                        " Executer des fonctions uniquement appelées via élément HTML, Télécharger des choses." + 
-                        " Si via executer_javascript tu veux modifier le presse-papier de l'utilisateur, tu as le droit de générer un code qui utilise navigator.clipboard.writeText('TEXTE'). Une sécurité demandera une confirmation à l'utilisateur avant l'exécution.";
+                        " Pas de Markdown (pas de **, pas de #, pas de listes avec * ou -, pas de blocs de code). Réponds en texte brut fluide. SEULE EXCEPTION : Si tu dois afficher un lien ou une URL, écris-le obligatoirement au format HTML sous la forme : <a href='URL_ICI' target='_blank'>TEXTE_DU_LIEN</a>.";
     
     const jsonFileName = settings.JSON_FILE || "";
     let siteContextText = ""; 
@@ -109,11 +107,8 @@
         #gh-send-btn { background: var(--chat-primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         .gh-action-area { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
-        .gh-listen-btn, .gh-exec-btn { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; color: #333; transition: background 0.2s; font-weight: bold; }
+        .gh-listen-btn { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; color: #333; transition: background 0.2s; font-weight: bold; }
         .gh-listen-btn:hover { background: #f0f0f0; }
-        .gh-exec-btn { background: #28a745; color: white; border-color: #218838; }
-        .gh-exec-btn:hover { background: #218838; }
-        .gh-exec-btn.disabled { background: #6c757d; border-color: #6c757d; cursor: not-allowed; opacity: 0.7; }
     `;
 
     if (MODE === "widget") {
@@ -171,6 +166,7 @@
         return text.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').replace(/^#+\s+/gm, '');
     }
 
+    // FONCTION DE SYNTHÈSE VOCALE (SPEECH)
     function gererLectureTexte(texteAEnregistrer, bouton) {
         if (window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
@@ -190,33 +186,13 @@
         window.speechSynthesis.speak(speechUtterance);
     }
 
-    // 5. LOGIQUE DE L'IA ET GESTION DES OUTILS (FONCTIONS)
+    // 5. LOGIQUE DE L'IA (SANS OUTILS)
     const messagesContainer = document.getElementById('gh-chat-messages');
     const chatInput = document.getElementById('gh-chat-input');
     const sendBtn = document.getElementById('gh-send-btn');
     let conversationHistory = [];
 
-    const botTools = [{
-        functionDeclarations: [
-            {
-                name: "analyser_page",
-                description: "Récupère le contenu HTML complet nettoyé de la page web pour voir sa structure, ses textes et ses boutons."
-            },
-            {
-                name: "executer_javascript",
-                description: "Exécute un script JavaScript sur la page web pour interagir avec des éléments (ex: faire défiler la page, ajouter un contour rouge clignotant, copier un texte dans le presse-papier).",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        code: { type: "STRING", description: "Le code JavaScript exact à exécuter." }
-                    },
-                    required: ["code"]
-                }
-            }
-        ]
-    }];
-
-    function appendMessage(text, sender, jsCodeToAuthorize = null) {
+    function appendMessage(text, sender) {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('gh-msg', `gh-${sender}`);
         
@@ -227,6 +203,7 @@
                 const actionArea = document.createElement('div');
                 actionArea.className = 'gh-action-area';
 
+                // Bouton Écouter
                 const listenBtn = document.createElement('button');
                 listenBtn.className = 'gh-listen-btn';
                 listenBtn.innerHTML = '🔊 Écouter';
@@ -236,42 +213,6 @@
                     gererLectureTexte(textToSpeak, listenBtn);
                 });
                 actionArea.appendChild(listenBtn);
-
-                if (jsCodeToAuthorize) {
-                    const execBtn = document.createElement('button');
-                    execBtn.className = 'gh-exec-btn';
-                    execBtn.innerHTML = '🛡️ Autoriser l\'exécution du code';
-                    
-                    execBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (execBtn.classList.contains('disabled')) return;
-                        
-                        // ANALYSE DU CODE : Sécurité modification du presse-papier
-                        if (jsCodeToAuthorize.includes("clipboard.writeText")) {
-                            let match = jsCodeToAuthorize.match(/writeText\s*\(\s*['"`](.*?)['"`]\s*\)/);
-                            let texteExtrait = match ? match[1] : "[Texte inconnu]";
-                            
-                            let confirmation = confirm(`${aiName} demande a remplacer votre presse-papier par ${texteExtrait}`);
-                            if (!confirmation) {
-                                execBtn.innerHTML = '❌ Modification refusée par l\'utilisateur';
-                                execBtn.classList.add('disabled');
-                                return;
-                            }
-                        }
-
-                        try {
-                            const runScript = new Function(jsCodeToAuthorize);
-                            runScript();
-                            execBtn.innerHTML = '✅ Code exécuté avec succès';
-                            execBtn.classList.add('disabled');
-                        } catch (err) {
-                            console.error("Erreur d'exécution du script IA:", err);
-                            execBtn.innerHTML = '❌ Erreur lors de l\'exécution';
-                        }
-                    });
-                    actionArea.appendChild(execBtn);
-                }
-
                 msgDiv.appendChild(actionArea);
             }
         } else {
@@ -313,8 +254,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    contents: conversationHistory,
-                    tools: botTools
+                    contents: conversationHistory
                 })
             });
 
@@ -332,59 +272,14 @@
             }
 
             const part = data.candidates[0].content.parts[0];
-
-            if (part.functionCall) {
-                const funcName = part.functionCall.name;
-                const funcArgs = part.functionCall.args;
-
-                conversationHistory.push({
-                    role: "model",
-                    parts: [part]
-                });
-
-                if (funcName === "analyser_page") {
-                    const htmlContent = document.body.innerHTML.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-                    const cleanHtml = htmlContent.substring(0, 4000);
-                    
-                    conversationHistory.push({
-                        role: "user",
-                        parts: [{
-                            functionResponse: {
-                                name: "analyser_page",
-                                response: { result: "Contenu de la page récupéré avec succès.", html: cleanHtml }
-                            }
-                        }]
-                    });
-
-                    appendMessage("Analyse de la page en cours...", 'bot');
-                    const nextLoading = messagesContainer.lastChild;
-                    await appelerGemini(nextLoading);
-
-                } else if (funcName === "executer_javascript") {
-                    const codeToRun = funcArgs.code;
-                    
-                    appendMessage("J'ai préparé une action pour t'aider sur la page. Clique sur le bouton ci-dessous pour l'activer.", 'bot', codeToRun);
-                    
-                    conversationHistory.push({
-                        role: "user",
-                        parts: [{
-                            functionResponse: {
-                                name: "executer_javascript",
-                                response: { result: "Le script a été proposé à l'utilisateur via un bouton de validation." }
-                            }
-                        }]
-                    });
-                }
-
-            } else {
-                const botResponse = part.text;
-                appendMessage(botResponse, 'bot');
-                
-                conversationHistory.push({ 
-                    role: "model", 
-                    parts: [{ text: botResponse }] 
-                });
-            }
+            const botResponse = part.text;
+            
+            appendMessage(botResponse, 'bot');
+            
+            conversationHistory.push({ 
+                role: "model", 
+                parts: [{ text: botResponse }] 
+            });
 
         } catch (error) {
             console.error("Erreur:", error);

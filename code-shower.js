@@ -59,7 +59,7 @@ window.CodeState = {
 
         container.innerHTML = `
             <div class="code-block-inner" style="background-color: #1e1e1e; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                <div class="code-header" style="display: flex; justify-content: flex-start; align-items: flex-start; background-color: #2d2d2d; padding: 8px 16px; color: #bcbcbc; font-size: 0.85rem; font-family: monospace; border-bottom: 1px solid #313244;">
+                <div class="code-header" style="display: flex; align-items: center; background-color: #2d2d2d; padding: 8px 16px; color: #bcbcbc; font-size: 0.85rem; font-family: monospace; border-bottom: 1px solid #313244;">
                     <span>${extension}</span>
                     <button class="copy-button" style="background-color: #3a3a3a; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: background 0.2s ease, transform 0.1s ease; display: flex; align-items: center; gap: 5px; font-family: inherit;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
